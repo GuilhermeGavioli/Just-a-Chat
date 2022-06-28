@@ -105,7 +105,7 @@ app.get("/chat", (req, res) => {
 
 
 
-server.listen(3001, () => console.log("Server is running"))
+server.listen(process.env.PORT, () => console.log("Server is running"))
 
 
 

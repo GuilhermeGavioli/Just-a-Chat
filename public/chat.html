@@ -1,0 +1,213 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title id="title">Chat</title>
+
+    <link rel="shortcut icon" href="./assets//logo.ico" type="image/x-icon">
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.tailwindcss.com?plugins=forms,typography,aspect-ratio,line-clamp"></script>
+
+    <script
+      src="https://kit.fontawesome.com/69266619cf.js"
+      crossorigin="anonymous"
+    ></script>
+
+    <link rel="stylesheet" href="./chat.css" />
+
+    <script src="/socket.io/socket.io.js"></script>
+  </head>
+  <body class="h-[100vh] relative">
+    <div
+      class="w-[50vh] left-0 right-0 m-auto absolute top-10 bg-[rgb(255,255,255)] rounded-md h-[80vh]"
+    >
+      <header
+        id="header"
+        class="h-[10vh] w-full flex text-[rgb(88,123,239)] bg-white"
+      >
+        <nav
+          class="w-[15%] flex justify-center cursor-pointer"
+          id="go-back-nav"
+        >
+          <i class="fa-solid fa-angle-left text-xl"></i>
+        </nav>
+        <nav class="w-[65%] flex justify-center font-bold">
+          <p id="room-dom"></p>
+        </nav>
+        <nav class="w-[20%] flex justify-center ">
+          <img src="./assets//logo.ico" alt="logo" class="w-7 h-6">
+        </nav>
+      </header>
+
+      <main
+        class="h-[68vh] w-full max-h-[68vh] overflow-y-scroll pt-3 pb-48"
+        id="scrollDiv"
+      >
+        <ul id="list-container"></ul>
+      </main>
+
+      <footer class="h-fit relative border-t-[1px] border-gray-300">
+        <input
+          type="text"
+          id="msg-input"
+          class="w-full h-[6vh] border-none outline-none active:outline-none focus-within:outline-none focus:outline-none"
+        />
+        <i
+          id="send-message-btn"
+          class="fa-solid fa-location-arrow text-[rgb(88,123,239)] text-2xl rotate-45 absolute right-4 top-0 bottom-0 m-auto cursor-pointer"
+        ></i>
+      </footer>
+    </div>
+
+    <script defer>
+      const wholeQueryString = window.location.search;
+      const room = wholeQueryString.substring(6, 11);
+      const nickname = wholeQueryString.substring(21);
+
+
+
+      if (!nickname || !room) {
+        alert("No room or nickname provided");
+        window.location.href = "/";
+      } else if (nickname.length > 30 || room.legnth > 4) {
+        alert("Provided field is too long");
+        window.location.href = "/";
+      } else {
+        runSocketClient();
+      }
+
+      function runSocketClient() {
+        let socketID;
+        const roomDOM = document.getElementById("room-dom");
+        const listContainer = document.getElementById("list-container");
+        const scrollMainDiv = document.getElementById("scrollDiv");
+        const socket = io();
+
+        roomDOM.innerText = "Room " + room.substring(4);
+        document.getElementById('title').innerText += "- Room " + room.substring(4);
+
+        document
+          .getElementById("go-back-nav")
+          .addEventListener(
+            "click",
+            () => (window.location.href = "./index.html")
+          );
+
+        //listen on sockets
+        socket.on("send-message-callback", (data) => {
+          if (data.status === 200)
+            appendMessage(data.owner, data.message, false, data.time);
+        });
+
+        socket.on("old-messages", (OldMessagesArray) =>
+          appendPreviousMessages(OldMessagesArray)
+        );
+
+        socket.on("socketID", (id) => {
+          socketID = id;
+          socket.emit("join-room", { room, nickname, socketID: socketID });
+        });
+
+        socket.on("join-room-callback", (data) =>
+          appendMessage("chat bot", data.message, false, data.time)
+        );
+
+        const msgInput = document.getElementById("msg-input");
+        const sendMessageBtn = document.getElementById("send-message-btn");
+
+        msgInput.addEventListener("keypress", (e) =>
+          sendMessage(e, "keyboard")
+        );
+        sendMessageBtn.addEventListener("click", (e) =>
+          sendMessage(e, "mouse")
+        );
+
+        function appendPreviousMessages(OldMessagesArray) {
+          OldMessagesArray.map((messageObj) => {
+            if (messageObj.ownerID === socketID)
+              appendMessage(
+                messageObj.owner,
+                messageObj.message,
+                true,
+                messageObj.time
+              );
+            else {
+              appendMessage(
+                messageObj.owner,
+                messageObj.message,
+                false,
+                messageObj.time
+              );
+            }
+          });
+        }
+
+        function sendMessage(e, type) {
+          if (msgInput.value.trim() !== "") {
+            if (type === "keyboard" && e.key === "Enter") {
+              socket.emit("send-message", {
+                message: msgInput.value,
+                room,
+                owner: nickname,
+                ownerID: socketID,
+              });
+              appendMessage(
+                "me",
+                msgInput.value,
+                true,
+                new Date().getHours() + ":" + new Date().getMinutes()
+              );
+              msgInput.value = "";
+            }
+            if (type === "mouse") {
+              socket.emit("send-message", {
+                message: msgInput.value,
+                room,
+                owner: nickname,
+                ownerID: socketID,
+              });
+              appendMessage(
+                "me",
+                msgInput.value,
+                true,
+                new Date().getHours() + ":" + new Date().getMinutes()
+              );
+              msgInput.value = "";
+            }
+          }
+        }
+
+        function appendMessage(owner, msg, isMyOwnMessage, time) {
+          let li = document.createElement("li");
+          let div = document.createElement("div");
+          let ownerDiv = document.createElement("div");
+
+          let timeDiv = document.createElement("div");
+          timeDiv.innerText = time;
+          timeDiv.className = "text-xs text-gray-300 mr-3 ml-3";
+
+          if (isMyOwnMessage) {
+            div.className = "my-message-container";
+            li.className = "myMessage";
+            div.append(timeDiv);
+            div.append(li);
+          } else {
+            ownerDiv.innerText = owner;
+            ownerDiv.className = "absolute top-1 left-4 text-gray-300 text-xs";
+            div.className = "message-container";
+            li.className = "message";
+            div.append(li);
+            div.append(timeDiv);
+            div.append(ownerDiv);
+          }
+
+          li.append(msg);
+          listContainer.append(div);
+          scrollMainDiv.scrollTo(0, 9999999999999);
+        }
+      }
+    </script>
+  </body>
+</html>

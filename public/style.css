@@ -1,0 +1,22 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+body{
+    height: 100vh;
+    background-color: rgba(54, 99, 245, 0.757);
+    background-image: url("./newnew.jpg");
+    background-position: center;
+    background-repeat: no-repeat;
+    background-size: cover;
+}
+
+#nickname-input::placeholder{
+    color: #757575;
+}
+
+.message{
+    background-color: green;
+}
+
+

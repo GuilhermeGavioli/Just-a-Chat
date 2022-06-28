@@ -1,0 +1,49 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Lobby</title>
+
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.tailwindcss.com?plugins=forms,typography,aspect-ratio,line-clamp"></script>
+
+    <link rel="stylesheet" href="./style.css" />
+    <script src="/socket.io/socket.io.js"></script>
+  </head>
+  <body>
+    <div
+      class="w-fit h-44 absolute right-0 left-0 top-0 bottom-4 m-auto flex flex-col justify-between"
+    >
+      <input
+        type="text"
+        placeholder="Nickname"
+        maxlength="30"
+        id="nickname-input"
+        class="w-64 border-none text-[#757575]"
+      />
+      <select name="room" id="rooms" class="border-none text-[#757575]">
+        <option value="room1">room 1</option>
+        <option value="room2">room 2</option>
+        <option value="room3">room 3</option>
+        <option value="room4">room 4</option>
+      </select>
+
+      <button id="join-room-btn" class="bg-[#F5BD27] px-4 py-2 text-white">
+        Enter
+      </button>
+    </div>
+
+    <script defer>
+      document.getElementById("join-room-btn").addEventListener("click", () => {
+        const user = document.getElementById("nickname-input").value;
+        const room = document.getElementById("rooms").value;
+
+        window.location.href = `/chat?room=${
+          document.getElementById("rooms").value
+        }&nickname=${user}`;
+      });
+    </script>
+  </body>
+</html>
